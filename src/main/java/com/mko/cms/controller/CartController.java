@@ -47,9 +47,14 @@ public class CartController extends BaseController {
             cart.setUserID(cartData.getUserID());
             cart.setCartDate(new Date());
             this.cartRepository.saveAndFlush(cart);
-            List<Cart> price=cartRepository.findpp(userID);
-            double priceSum=price.stream().count();
-            cart.setAllPrice(priceSum);
+            List<Cart> list = cartRepository.getCartList(userID);
+            int sum=0;
+            for (int i = 0 ; i<list.size();i++) {
+                Cart cart1 = (Cart) list.get(i);
+                Goods goods = goodsRepository.getGoodPrice(cart1.getGoodsId());
+                sum = cart1.getQuantity() * goods.getGoodsPrice() + sum;
+            }
+            cart.setAllPrice(sum);
             cartRepository.saveAndFlush(cart);
             return makeSuccessResponse("添加成功");
         }catch (Exception e){
@@ -66,9 +71,14 @@ public class CartController extends BaseController {
             cart.setQuantity(cartData.getQuantity());
             cart.setCgmtModifeid(new Date());
             cartRepository.saveAndFlush(cart);
-            List<Cart> price=cartRepository.findpp(userID);
-            double priceSum=price.stream().count();
-            cart.setAllPrice(priceSum);
+              List<Cart> list = cartRepository.getCartList(userID);
+            int sum=0;
+            for (int i = 0 ; i<list.size();i++) {
+                Cart cart1 = (Cart) list.get(i);
+                Goods goods = goodsRepository.getGoodPrice(cart1.getGoodsId());
+                sum = cart1.getQuantity() * goods.getGoodsPrice() + sum;
+            }
+             cart.setAllPrice(sum);
             cartRepository.saveAndFlush(cart);
             return makeSuccessResponse("");
 
@@ -90,11 +100,26 @@ public class CartController extends BaseController {
             } else {
                 Cart cart=new Cart();
                 this.cartRepository.delete(result);
-                List<Cart> price=cartRepository.findpp(userID);
-                DoubleSummaryStatistics collect=price.stream().collect(Collectors.summarizingDouble(value -> value));
-                double priceSum=collect.getSum();
-                cart.setAllPrice(priceSum);
+                List<Cart> list = cartRepository.getCartList(userID);
+                int sum=0;
+                for (int i = 0 ; i<list.size();i++) {
+                    Cart cart1 = (Cart) list.get(i);
+                    Goods goods = goodsRepository.getGoodPrice(cart1.getGoodsId());
+                    sum = cart1.getQuantity() * goods.getGoodsPrice() + sum;
+                }
+                cart.setAllPrice(sum);
                 cartRepository.saveAndFlush(cart);
+                //                List<Goods> findpp=cartRepository.findpp(userID);
+//                List<Cart> findbb=cartRepository.findbb(userID);
+//                double all=0;
+//                for(int i=0;i<findpp.size();i++)
+//                {
+//                   all=findbb.get(i).getQuantity()*findpp.get(i).getGoodsPrice()+all;
+//                }
+//
+//                DoubleSummaryStatistics collect=price.stream().collect(Collectors.summarizingDouble(value -> value));
+//                double priceSum=collect.getSum();
+//                cart.setAllPrice(priceSum);
                 return this.makeSuccessResponse("删除成功");
             }
         }

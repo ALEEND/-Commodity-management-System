@@ -6,6 +6,7 @@ import org.hibernate.validator.constraints.EAN;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public interface CartRepository extends JpaRepository<Cart,Integer> {
@@ -18,6 +19,8 @@ public interface CartRepository extends JpaRepository<Cart,Integer> {
     @Query(value="SELECT * FROM WHERE cartId=?1",nativeQuery = true)
     Cart cartId(Integer cartid);
 
-    @Query(value = "SELECT SUM(goods.price * cart.quantity)  FROM goods, cart WHERE cart.goodsId = goods.goodsId AND userID = userID =?1 GROUP BY goods.goodsId",nativeQuery = true)
-    List<Cart> findpp( Integer userID);
+
+    @Query(value = "select * from cart where userID=?1",nativeQuery = true)
+    List<Cart> getCartList(Integer userID);
+
 }

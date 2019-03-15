@@ -29,8 +29,6 @@ public class GoodsController extends BaseController {
     @Autowired
     private GoodsRepository goodsRepository;
 
-    public GoodsController() {
-    }
 
     @RequestMapping({"info"})
     public MKOResponse info(@RequestParam Integer goodsId) {
