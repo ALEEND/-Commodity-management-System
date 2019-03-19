@@ -19,11 +19,11 @@ import java.util.*;
 
 /**
  * @program: person manager system
- * @description: 用户功能模块
+ * @description: 客户管理功能模块
  * @author: Yuxz
- * @create: 2019-03-07
+ * @create: 2019-03-18
  **/
-@RequestMapping(value = "pms")
+@RequestMapping(value = "user")
 @RestController
 
 //8个接口
@@ -59,7 +59,6 @@ public class UserController extends BaseController {
             result.put("userInfo", obj);
             result.put("token", token);
             return this.makeSuccessResponse(result);
-//            System.out.println(token);
 
 
         } catch (Exception e) {
@@ -73,22 +72,22 @@ public class UserController extends BaseController {
      * @program: goods manager system
      * @description: 客户列表模块
      * @author: Yuxz
-     * @create: 2019-03-07
+     * @create: 2019-03-18
      **/
-    @GetMapping("list")
+    @GetMapping("userList")
     MKOResponse list(@RequestParam(defaultValue = "") String nameAndTel,
                      @RequestParam(defaultValue = "-1") Integer state,
                      @RequestParam int count,@RequestParam int page) {
         try {
             StringBuilder sqlCount=new StringBuilder("select count(*) count from user where 1=1");
-            StringBuilder sql=new StringBuilder("select id,name,sex,tel,age,state,role,gmtcreate from user where 1=1");
+            StringBuilder sql=new StringBuilder("select userID,userName,sex,tel,age,state,ugmtCreate,ugmtModifeid from user where 1=1");
             //筛选
-            String condition = " ";
+            String condition = " AND role=0  ";
             if (-1 != state) {
-                condition = condition + ("AND state = " + state + " ");
+                condition = condition + (" AND state = " + state + " ");
             }
             if (!nameAndTel.equals("")|| nameAndTel.length()==0) {
-                condition = condition + "AND (name like '%" + nameAndTel + "%' OR tel like '%" + nameAndTel + "%' ) ";
+                condition = condition + " AND (userName like '%" + nameAndTel + "%' OR tel like '%" + nameAndTel + "%' ) ";
             }
             if(!condition.isEmpty()){
                 sqlCount.append(condition);
@@ -96,7 +95,7 @@ public class UserController extends BaseController {
             }
             Query queryCount=entityManager.createNativeQuery(sqlCount.toString());
             //遍历
-            sql.append("ORDER BY id DESC ");
+            sql.append("ORDER BY userID DESC ");
             //分页
             sql.append("    LIMIT "+(page-1)*count +"," + count);
             Query query=entityManager.createNativeQuery(sql.toString());
@@ -114,15 +113,15 @@ public class UserController extends BaseController {
 
 
     /**
-     * @program: person manager system
-     * @description: 详情模块
+     * @program: goods manager system
+     * @description:客户详情模块
      * @author: Yuxz
      * @create: 2019-03-07
      **/
     @GetMapping("info")
-    MKOResponse info(@RequestParam Integer UserID) {
+    MKOResponse info(@RequestParam Integer userID) {
         try {
-            Optional<UserInfo> userInfo = personRepository.findById(UserID);
+            Optional<UserInfo> userInfo = personRepository.findById(userID);
             if (!userInfo.isPresent()) {
                 return makeResponse(MKOResponseCode.DataNotFound, "找不到数据");
             }
@@ -136,15 +135,15 @@ public class UserController extends BaseController {
     }
 
     /**
-     * @program: person manager system
-     * @description: 删除模块
+     * @program:goods manager system
+     * @description: 客户删除模块
      * @author: Yuxz
      * @create: 2019-03-07
      **/
     @GetMapping("delete")
-    MKOResponse delete(@RequestParam Integer UserID) {
+    MKOResponse delete(@RequestParam Integer userID) {
         try {
-            Optional<UserInfo> result = personRepository.findById(UserID);
+            Optional<UserInfo> result = personRepository.findById(userID);
             if (!result.isPresent()) {
                 return makeResponse(MKOResponseCode.DataNotFound, "找不到数据");
             }
@@ -156,13 +155,11 @@ public class UserController extends BaseController {
             e.printStackTrace();
             return makeBussessErrorResponse("未知错误");
         }
-
-
     }
 
     /**
-     * @program: person manager system
-     * @description: 添加模块
+     * @program: goods manager system
+     * @description: 客户添加模块
      * @author: Yuxz
      * @create: 2019-03-07
      **/
@@ -200,8 +197,8 @@ public class UserController extends BaseController {
     }
 
     /**
-     * @program: person manager system
-     * @description: 修改模块
+     * @program: goods manager system
+     * @description: 用户修改客户模块
      * @author: Yuxz
      * @create: 2019-03-07
      **/
@@ -217,7 +214,6 @@ public class UserController extends BaseController {
             if (updateResult == null) {
                 return makeResponse(MKOResponseCode.DataNotFound, "找不到该数据");
             }
-
             UserInfo userInfo = new UserInfo();
             userInfo.setUserID(userInfoData.getUserID());
             userInfo.setTel(updateResult.getTel());
@@ -225,7 +221,6 @@ public class UserController extends BaseController {
             userInfo.setPassword(userInfoData.getPassword());
             userInfo.setAge(userInfoData.getAge());
             userInfo.setSex(userInfoData.getSex());
-            userInfo.setRole(userInfoData.getRole() );
             userInfo.setState(userInfoData.getState());
             userInfo.setUgmtModifeid(new Date());
             personRepository.saveAndFlush(userInfo);
@@ -238,8 +233,38 @@ public class UserController extends BaseController {
     }
 
     /**
-     * @program: person manager system
-     * @description: 转换状态模块
+     * @program: goods manager system
+     * @description:客户自己修改模块
+     * @author: Yuxz
+     * @create: 2019-03-07
+     **/
+    @PostMapping("comUpdate")
+    MKOResponse comupdate(@RequestBody UserInfo userInfoData) {
+        try {
+            //判断ID
+            UserInfo updateResult = personRepository.chooseID(userInfoData.getUserID());
+            if (updateResult == null) {
+                return makeResponse(MKOResponseCode.DataNotFound, "找不到该数据");
+            }
+            UserInfo userInfo = new UserInfo();
+            userInfo.setUserID(userInfoData.getUserID());
+            userInfo.setTel(userInfoData.getTel());
+            userInfo.setUserName(userInfoData.getUserName());
+            userInfo.setAge(userInfoData.getAge());
+            userInfo.setSex(userInfoData.getSex());
+            userInfo.setUgmtModifeid(new Date());
+            personRepository.saveAndFlush(userInfo);
+            return makeSuccessResponse("已修改");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return makeBussessErrorResponse("未知错误");
+        }
+
+    }
+
+    /**
+     * @program: goods manager system
+     * @description: 禁用启用/转换状态模块
      * @author: Yuxz
      * @create: 2019-03-09
      **/
@@ -260,8 +285,8 @@ public class UserController extends BaseController {
         }
     }
     /**
-     * @program: person manager system
-     * @description: 修改密码模块
+     * @program: goods manager system
+     * @description: 客户修改密码模块
      * @author: Yuxz
      * @create: 2019-03-09
      **/

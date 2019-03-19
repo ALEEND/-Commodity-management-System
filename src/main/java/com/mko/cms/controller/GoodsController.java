@@ -8,6 +8,7 @@ package com.mko.cms.controller;
 import com.alibaba.fastjson.JSONObject;
 import com.mko.cms.controller.BaseController;
 import com.mko.cms.enetity.Goods;
+import com.mko.cms.enetity.UserInfo;
 import com.mko.cms.repository.GoodsRepository;
 import com.mko.cms.util.MKOResponse;
 import com.mko.cms.util.MKOResponseCode;
@@ -23,14 +24,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+
+/**
+ * @program: goods manager system
+ * @description: 商品管理模块
+ * @author: Yuxz
+ * @create: 2019-03-18
+ **/
 @RestController
 @RequestMapping({"goods"})
 public class GoodsController extends BaseController {
     @Autowired
     private GoodsRepository goodsRepository;
 
-
-    @RequestMapping({"info"})
+    //商品详情
+    @RequestMapping({"goodsinfo"})
     public MKOResponse info(@RequestParam Integer goodsId) {
         try {
             Optional<Goods> goodsResult = this.goodsRepository.findById(goodsId);
@@ -47,17 +55,11 @@ public class GoodsController extends BaseController {
         }
     }
 
-    //             Map<String, Object> goodsParam = new HashMap();
-//            String fields = "*";
-//            Cart name=cartRepository.fingName(UserID);
-//            String condition=String.format("AND userID = %s",UserID);
-//            String orderBy = "ORDER BY goodsId DESC";
-//            Object result = this.getRecord(fields, "cart", condition, goodsParam, orderBy, page, count);
-//            return this.makeSuccessResponse(result);
 
-    @RequestMapping({"list"})
-    public MKOResponse list(@RequestParam(defaultValue = "") String goodName,
-                            @RequestParam(defaultValue = "") String goodDescribe,
+    //商品列表详情
+    @RequestMapping({"goodslist"})
+    public MKOResponse list(@RequestParam(defaultValue = "") String goodsName,
+                            @RequestParam(defaultValue = "") String goodsDescribe,
                             @RequestParam(defaultValue = "") String sPrice,
                             @RequestParam(defaultValue = "") String ePrice,
                             @RequestParam int page, @RequestParam int count) {
@@ -65,14 +67,15 @@ public class GoodsController extends BaseController {
             Map<String, Object> goodsParam = new HashMap();
             String fields = "*";
             String condition = "";
-            if (!goodName.equals("")) {
-                condition = condition + String.format(" AND goodsName like '%s'", goodName);
+            //商品名字模糊查询
+            if (!goodsName.equals("")) {
+                condition = condition + String.format(" AND goodsName like '%s'", goodsName);
             }
-
-            if (!goodDescribe.equals("")) {
-                condition = condition + String.format(" AND goodsDescribe like '%s'", goodDescribe);
+            //商品描述模糊查询
+            if (!goodsDescribe.equals("")) {
+                condition = condition + String.format(" AND goodsDescribe like '%s'", goodsDescribe);
             }
-
+            //价格筛选查询
             if (!sPrice.equals("") || !ePrice.equals("")) {
                 condition = condition + String.format(" AND goodsPrice between '%s' and '%s'", sPrice, ePrice);
             }
@@ -86,7 +89,8 @@ public class GoodsController extends BaseController {
         }
     }
 
-    @GetMapping({"delete"})
+    //商品删除
+    @GetMapping({"goodsdelete"})
     MKOResponse delete(@RequestParam Integer goodsId) {
         try {
             Optional<Goods> goodsResult = this.goodsRepository.findById(goodsId);
@@ -94,8 +98,6 @@ public class GoodsController extends BaseController {
                 return this.makeResponse(MKOResponseCode.DataNotFound, "找不到此ID");
             } else {
                 this.goodsRepository.delete(goodsResult.get());
-                Goods goods=new Goods();
-                goods.setGgmtModifeid(new Date());
                 return this.makeSuccessResponse("删除成功");
             }
         } catch (Exception var3) {
@@ -104,11 +106,12 @@ public class GoodsController extends BaseController {
         }
     }
 
-    @PostMapping({"add"})
+    //商品添加
+    @PostMapping({"goodsadd"})
     MKOResponse add(@RequestBody Goods goodsData) {
         try {
             if (goodsData.getGoodsName() == null) {
-                return this.makeResponse(MKOResponseCode.ParamsLack, "商品不能为空");
+                return this.makeResponse(MKOResponseCode.ParamsLack, "商品姓名不能为空");
             } else {
                 Goods goods = new Goods();
                 goods.setGoodsName(goodsData.getGoodsName());
@@ -127,6 +130,8 @@ public class GoodsController extends BaseController {
         }
     }
 
+
+    //商品修改更新
     @PostMapping({"update"})
     MKOResponse update(@RequestBody Goods goodsData) {
         try {
@@ -155,6 +160,25 @@ public class GoodsController extends BaseController {
         } catch (Exception var4) {
             var4.printStackTrace();
             return this.makeBussessErrorResponse("位置异常");
+        }
+    }
+
+
+    //商品状态
+    @GetMapping("goodsSwitch")
+    MKOResponse swich(@RequestParam Integer goodsId,
+                      @RequestParam Integer goodsState){
+        try{
+            Optional<Goods> goods=goodsRepository.findById(goodsId);
+            if(!goods.isPresent()){
+                return makeResponse(MKOResponseCode.DataNotFound,"找不到此ID");
+            }
+            goods.get().setGoodsState(goodsState);
+            goodsRepository.saveAndFlush(goods.get());
+            return makeResponse(MKOResponseCode.Success,"销售状态转换成功");
+        }catch(Exception e){
+            e.printStackTrace();
+            return makeBussessErrorResponse("未知错误");
         }
     }
 }

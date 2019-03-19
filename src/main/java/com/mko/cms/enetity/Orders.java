@@ -19,12 +19,14 @@ import java.util.Date;
 public class Orders {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private  Integer orderId;
+    private  Integer ordersId;
     private  Integer userID;
-    private Date orderdate;
-    private String orderNumber;
-    private Integer orderState;
+    private Date ordersdate;
+    private String ordersCode;
+    private Integer ordersState;
     private Integer goodsId;
     private Double totalPrice;
+    private Date ogmtModifeid;
+    private Integer ordersQuantity;
 
 }
