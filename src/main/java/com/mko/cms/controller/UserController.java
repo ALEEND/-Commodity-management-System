@@ -84,10 +84,12 @@ public class UserController extends BaseController {
             //筛选
             String condition = " AND role=0  ";
             if (-1 != state) {
-                condition = condition + (" AND state = " + state + " ");
+//                condition = condition + (" AND state = " + state + " ");
+                condition += String.format(" AND state ='%s' ",state);
             }
             if (!nameAndTel.equals("")|| nameAndTel.length()==0) {
-                condition = condition + " AND (userName like '%" + nameAndTel + "%' OR tel like '%" + nameAndTel + "%' ) ";
+//                condition = condition + " AND (userName like '%" + nameAndTel + "%' OR tel like '%" + nameAndTel + "%' ) ";
+                condition +=String.format(" AND userName like '%s' or tel like '%s'",nameAndTel,nameAndTel);
             }
             if(!condition.isEmpty()){
                 sqlCount.append(condition);
@@ -95,9 +97,9 @@ public class UserController extends BaseController {
             }
             Query queryCount=entityManager.createNativeQuery(sqlCount.toString());
             //遍历
-            sql.append("ORDER BY userID DESC ");
+            String orderBy="ORDER BY userID DESC ";
             //分页
-            sql.append("    LIMIT "+(page-1)*count +"," + count);
+            sql.append(String.format(" %s LIMIT %s, %s", orderBy, ((page - 1) * count), count));
             Query query=entityManager.createNativeQuery(sql.toString());
             Map<String,Object> result=(Map<String,Object>) queryCount.unwrap(NativeQuery.class).setResultTransformer(Transformers.ALIAS_TO_ENTITY_MAP).getSingleResult();
             int total=Integer.parseInt(result.get("count").toString());

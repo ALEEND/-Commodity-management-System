@@ -118,9 +118,9 @@ public class OrdersController extends  BaseController {
             sql.append(condition);
             sqlCount.append(condition);
             //遍历
-            sql.append(" ORDER BY ordersId DESC ");
+            String orderBy="ORDER BY userID DESC ";
             //分页
-            sql.append("    LIMIT " + (page - 1) * count + "," + count);
+            sql.append(String.format(" %s LIMIT %s, %s", orderBy, ((page - 1) * count), count));
             Query query = entityManager.createNativeQuery(sql.toString());
             Map<String, Object> result = (Map<String, Object>) queryCount.unwrap(NativeQuery.class).setResultTransformer(Transformers.ALIAS_TO_ENTITY_MAP).getSingleResult();
             int total = Integer.parseInt(result.get("count").toString());
