@@ -27,7 +27,7 @@ public class Goods {
     private String goodsName;
     private String goodsDescribe;
     private String goodsPicture;
-    private Integer goodsPrice;
+    private Double goodsPrice;
     private Integer catalogId;
     private Integer goodsState;
     private Date ggmtCreate;

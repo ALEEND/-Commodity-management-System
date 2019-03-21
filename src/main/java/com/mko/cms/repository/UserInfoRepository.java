@@ -9,9 +9,6 @@ public interface UserInfoRepository extends JpaRepository<UserInfo,Integer> {
     @Query(value="select *from user WHERE tel=?1",nativeQuery = true)
     UserInfo findByTel(String tel);
 
-    @Query(value = "select *from user where usernName=?1",nativeQuery = true)
-    UserInfo fingName(String userName);
-
     @Query(value ="select *from user WHERE userID=?1",nativeQuery = true)
     UserInfo chooseID(Integer userID);
 

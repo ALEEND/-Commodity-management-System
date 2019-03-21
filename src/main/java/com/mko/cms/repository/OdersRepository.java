@@ -15,11 +15,7 @@ import java.util.Map;
 public interface OdersRepository extends JpaRepository<Orders,Integer> {
     @Query(value = "select goodsPrice from  goods where goodsId=?1",nativeQuery = true)
     Double findprice(Integer goodsId);
-    @Query(value = "select * from goods where goodsId=?1",nativeQuery = true)
-    Orders findgoods(Integer goodsId);
 
-    @Query(value = "select * from user where userID=?1",nativeQuery = true)
-     Object finduser(Integer userID);
 
     @Query(value = "select * from orders where userID=?1",nativeQuery = true)
     List<Orders> findOlist(Integer userID);

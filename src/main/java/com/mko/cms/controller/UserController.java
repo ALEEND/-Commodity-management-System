@@ -147,7 +147,9 @@ public class UserController extends BaseController {
             if (!result.isPresent()) {
                 return makeResponse(MKOResponseCode.DataNotFound, "找不到数据");
             }
-
+            if(!result.get().getRole().equals(1)){
+                return makeResponse(MKOResponseCode.NoPermission,"无权限");
+            }
             this.personRepository.delete(result.get());
             return makeSuccessResponse("已删除");
 
@@ -188,6 +190,7 @@ public class UserController extends BaseController {
             userInfo.setRole(userInfoData.getRole() == null ? 0 : userInfoData.getRole());
             userInfo.setState(userInfoData.getState()==null ? 1 : userInfoData.getState());
             userInfo.setUgmtCreate(new Date());
+            userInfo.setUgmtModifeid(new Date());
             personRepository.saveAndFlush(userInfo);
             return makeSuccessResponse("已添加");
         } catch (Exception e) {
@@ -210,13 +213,11 @@ public class UserController extends BaseController {
                 return makeParamsLackResponse("缺少参数或[id]小于等于0");
             }
             //判断ID
-            UserInfo updateResult = personRepository.chooseID(userInfoData.getUserID());
-            if (updateResult == null) {
+            UserInfo userInfo = personRepository.chooseID(userInfoData.getUserID());
+            if (userInfo == null) {
                 return makeResponse(MKOResponseCode.DataNotFound, "找不到该数据");
             }
-            UserInfo userInfo = new UserInfo();
             userInfo.setUserID(userInfoData.getUserID());
-            userInfo.setTel(updateResult.getTel());
             userInfo.setUserName(userInfoData.getUserName());
             userInfo.setPassword(userInfoData.getPassword());
             userInfo.setAge(userInfoData.getAge());
@@ -242,11 +243,10 @@ public class UserController extends BaseController {
     MKOResponse comupdate(@RequestBody UserInfo userInfoData) {
         try {
             //判断ID
-            UserInfo updateResult = personRepository.chooseID(userInfoData.getUserID());
-            if (updateResult == null) {
+            UserInfo userInfo = personRepository.chooseID(userInfoData.getUserID());
+            if (userInfo == null) {
                 return makeResponse(MKOResponseCode.DataNotFound, "找不到该数据");
             }
-            UserInfo userInfo = new UserInfo();
             userInfo.setUserID(userInfoData.getUserID());
             userInfo.setTel(userInfoData.getTel());
             userInfo.setUserName(userInfoData.getUserName());
@@ -303,6 +303,7 @@ public class UserController extends BaseController {
                 return makeResponse(MKOResponseCode.UnknownError, "", "密码错误！");
             }
             personRepository.updatePassword(newPassword,userID);
+            userResult.get().setUgmtModifeid(new Date());
             return  makeSuccessResponse("");
 
         }catch (Exception e){

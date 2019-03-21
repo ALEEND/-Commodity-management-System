@@ -4,7 +4,10 @@ import com.alibaba.fastjson.JSONObject;
 import com.mko.cms.enetity.Cart;
 import com.mko.cms.enetity.Goods;
 import com.mko.cms.enetity.Orders;
+import com.mko.cms.repository.GoodsRepository;
 import com.mko.cms.repository.OdersRepository;
+import com.mko.cms.repository.OrderitemRepository;
+import com.mko.cms.repository.UserInfoRepository;
 import com.mko.cms.util.MKOResponse;
 import com.mko.cms.util.MKOResponseCode;
 import org.hibernate.query.NativeQuery;
@@ -27,8 +30,20 @@ import java.util.*;
 public class OrdersController extends  BaseController {
     @Autowired
     private OdersRepository odersRepository;
+    @Autowired
+    private UserInfoRepository userInfoRepository;
+    @Autowired
+    private GoodsRepository goodsRepository;
+    @Autowired
+    private OrderitemRepository  orderitemRepository;
 
-    //添加订单
+    /**
+     * @program: goods manager system
+     * @description:  添加订单(单件）
+     * @author: Yuxz
+     * @create: 2019-03-21
+     **/
+
     @PostMapping("addOrders")
     public MKOResponse addOrders(@RequestBody Orders ordersData) {
         try {
@@ -39,9 +54,14 @@ public class OrdersController extends  BaseController {
             if(ordersData.getUserID()==null){
                 return this.makeResponse(MKOResponseCode.DataNotFound,"缺少userID");
             }
-            if(odersRepository.finduser(ordersData.getUserID())==null){
+            if(userInfoRepository.chooseID(ordersData.getUserID())==null){
                 return this.makeResponse(MKOResponseCode.DataNotFound,"无此用户");
             }
+            Goods goods=goodsRepository.chooseGoodsId(ordersData.getGoodsId());
+            if(goods==null){
+                return this.makeResponse(MKOResponseCode.DataNotFound,"无此商品");
+            }
+
             //判断商品销售状态
             if(!ordersData.getOrdersState().equals(1)){
                 return this.makeResponse(MKOResponseCode.NoPermission,"此商品未开售");
@@ -55,9 +75,10 @@ public class OrdersController extends  BaseController {
             orders.setOrdersCode(ordersCode);
             Double price = odersRepository.findprice(ordersData.getGoodsId());
             int quantity = ordersData.getOrdersQuantity();
-            Double totalPrice = price * quantity;
+            Double totalPrice = goods.getGoodsPrice() * quantity;
             orders.setTotalPrice(totalPrice);
             orders.setOrdersdate(new Date());
+            orders.setOgmtModifeid(new Date());
             odersRepository.saveAndFlush(orders);
             return makeSuccessResponse("添加成功");
         } catch (Exception e) {
@@ -67,7 +88,14 @@ public class OrdersController extends  BaseController {
 
     }
 
-    //订单列表
+
+
+    /**
+     * @program: goods manager system
+     * @description: 订单列表
+     * @author: Yuxz
+     * @create: 2019-03-21
+     **/
     @RequestMapping({"ordersList"})
     public MKOResponse ordersList(@RequestParam Integer userID,
                                   @RequestParam int page,
@@ -77,6 +105,9 @@ public class OrdersController extends  BaseController {
             //判断ID
             if (orders==null) {
                 return makeResponse(MKOResponseCode.DataNotFound, "找不到数据");
+            }
+            if(userInfoRepository.chooseID(userID)==null){
+                return makeResponse(MKOResponseCode.DataNotFound,"找不到此用户");
             }
             //查询订单
             StringBuilder sqlCount = new StringBuilder("select count(*) count from orders where 1=1");
@@ -103,11 +134,19 @@ public class OrdersController extends  BaseController {
     }
 
 
-    //订单详情
+    /**
+     * @program: goods manager system
+     * @description:  订单详情
+     * @author: Yuxz
+     * @create: 2019-03-21
+     **/
     @GetMapping("ordersInfo")
     public MKOResponse ordersInfo(@RequestParam Integer userID) {
         try
           {
+              if(userInfoRepository.chooseID(userID)==null){
+                  return makeResponse(MKOResponseCode.DataNotFound,"找不到此用户");
+              }
               List<Orders> order = odersRepository.findOlist(userID);
               //判断ID
               if (order==null) {
@@ -122,14 +161,26 @@ public class OrdersController extends  BaseController {
              }
 }
 
-        //订单删除
+    /**
+     * @program: goods manager system
+     * @description:  订单删除
+     * @author: Yuxz
+     * @create: 2019-03-21
+     **/
     @GetMapping("ordersDelete")
-    public MKOResponse ordersDelete(@RequestParam Integer ordersId){
+    public MKOResponse ordersDelete(@RequestParam Integer ordersId,@RequestParam Integer userID){
         try {
             Optional<Orders> orders = this.odersRepository.findById(ordersId);
-        if (!orders.isPresent()) {
+            if(userInfoRepository.chooseID(userID)==null){
+                return makeResponse(MKOResponseCode.DataNotFound,"找不到此用户");
+            }
+             if (!orders.isPresent()) {
             return this.makeResponse(MKOResponseCode.DataNotFound, "找不到此ID");
-        } else {
+            }
+            if(orders.get().getUserID()!=userID){
+                return this.makeResponse(MKOResponseCode.DataNotFound,"找不到数据");
+            }
+        else {
             this.odersRepository.delete(orders.get());
             return this.makeSuccessResponse("删除成功");
         }

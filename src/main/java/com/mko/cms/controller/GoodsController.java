@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @program: goods manager system
  * @description: 商品管理模块
  * @author: Yuxz
- * @create: 2019-03-18
+ * @create: 2019-03-19
  **/
 @RestController
 @RequestMapping({"goods"})
@@ -37,7 +37,13 @@ public class GoodsController extends BaseController {
     @Autowired
     private GoodsRepository goodsRepository;
 
-    //商品详情
+
+    /**
+     * @program: goods manager system
+     * @description: 商品详情
+     * @author: Yuxz
+     * @create: 2019-03-19
+     **/
     @RequestMapping({"goodsinfo"})
     public MKOResponse info(@RequestParam Integer goodsId) {
         try {
@@ -56,7 +62,12 @@ public class GoodsController extends BaseController {
     }
 
 
-    //商品列表详情
+    /**
+     * @program: goods manager system
+     * @description: 商品列表
+     * @author: Yuxz
+     * @create: 2019-03-19
+     **/
     @RequestMapping({"goodslist"})
     public MKOResponse list(@RequestParam(defaultValue = "") String goodsName,
                             @RequestParam(defaultValue = "") String goodsDescribe,
@@ -89,14 +100,20 @@ public class GoodsController extends BaseController {
         }
     }
 
-    //商品删除
+    /**
+     * @program: goods manager system
+     * @description: 商品删除
+     * @author: Yuxz
+     * @create: 2019-03-19
+     **/
     @GetMapping({"goodsdelete"})
     MKOResponse delete(@RequestParam Integer goodsId) {
         try {
             Optional<Goods> goodsResult = this.goodsRepository.findById(goodsId);
             if (!goodsResult.isPresent()) {
                 return this.makeResponse(MKOResponseCode.DataNotFound, "找不到此ID");
-            } else {
+            }
+            else {
                 this.goodsRepository.delete(goodsResult.get());
                 return this.makeSuccessResponse("删除成功");
             }
@@ -106,7 +123,12 @@ public class GoodsController extends BaseController {
         }
     }
 
-    //商品添加
+    /**
+     * @program: goods manager system
+     * @description: 商品添加
+     * @author: Yuxz
+     * @create: 2019-03-19
+     **/
     @PostMapping({"goodsadd"})
     MKOResponse add(@RequestBody Goods goodsData) {
         try {
@@ -121,6 +143,7 @@ public class GoodsController extends BaseController {
                 goods.setGoodsPrice(goodsData.getGoodsPrice());
                 goods.setGoodsState(goodsData.getGoodsState() == null ? 0 : goodsData.getGoodsState());
                 goods.setGgmtCreate(new Date());
+                goods.setGgmtModifeid(new Date());
                 this.goodsRepository.saveAndFlush(goods);
                 return this.makeSuccessResponse("添加成功");
             }
@@ -131,18 +154,22 @@ public class GoodsController extends BaseController {
     }
 
 
-    //商品修改更新
+    /**
+     * @program: goods manager system
+     * @description: 商品更新修改
+     * @author: Yuxz
+     * @create: 2019-03-19
+     **/
     @PostMapping({"update"})
     MKOResponse update(@RequestBody Goods goodsData) {
         try {
             if (goodsData.getGoodsName() == null) {
                 return this.makeResponse(MKOResponseCode.ParamsLack, "商品名字不能为空");
             } else if (goodsData.getGoodsId() != null && goodsData.getGoodsId() > 0) {
-                Goods updateResult = this.goodsRepository.chooseGoodsId(goodsData.getGoodsId());
-                if (updateResult == null) {
+                Goods goods = this.goodsRepository.chooseGoodsId(goodsData.getGoodsId());
+                if (goods == null) {
                     return this.makeResponse(MKOResponseCode.DataNotFound, "id不能为空");
                 } else {
-                    Goods goods = new Goods();
                     goods.setGoodsId(goodsData.getGoodsId());
                     goods.setGoodsName(goodsData.getGoodsName());
                     goods.setCatalogId(goodsData.getCatalogId());
@@ -164,7 +191,12 @@ public class GoodsController extends BaseController {
     }
 
 
-    //商品状态
+    /**
+     * @program: goods manager system
+     * @description: 商品预售发售
+     * @author: Yuxz
+     * @create: 2019-03-19
+     **/
     @GetMapping("goodsSwitch")
     MKOResponse swich(@RequestParam Integer goodsId,
                       @RequestParam Integer goodsState){

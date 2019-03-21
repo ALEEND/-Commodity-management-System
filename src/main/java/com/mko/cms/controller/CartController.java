@@ -4,10 +4,9 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.mko.cms.enetity.Cart;
 import com.mko.cms.enetity.Goods;
+import com.mko.cms.enetity.Orderitem;
 import com.mko.cms.enetity.Orders;
-import com.mko.cms.repository.CartRepository;
-import com.mko.cms.repository.GoodsRepository;
-import com.mko.cms.repository.OdersRepository;
+import com.mko.cms.repository.*;
 import com.mko.cms.util.MKOResponse;
 import com.mko.cms.util.MKOResponseCode;
 import org.hibernate.query.NativeQuery;
@@ -25,9 +24,9 @@ import java.util.stream.Stream;
 
 /**
  * @program: goods manager system
- * @description: 购物车列表模块
+ * @description: 购物车模块
  * @author: Yuxz
- * @create: 2019-03-18
+ * @create: 2019-03-20
  **/
 @RestController
 @RequestMapping({"cart"})
@@ -38,8 +37,18 @@ public class CartController extends BaseController {
     private OdersRepository odersRepository;
     @Autowired
     private CartRepository cartRepository;
+    @Autowired
+    private UserInfoRepository userInfoRepository;
+    @Autowired
+    private OrderitemRepository orderitemRepository;
 
-    //添加购物车
+
+    /**
+     * @program: goods manager system
+     * @description: 添加购物车
+     * @author: Yuxz
+     * @create: 2019-03-20
+     **/
     @PostMapping("addToCart")
     MKOResponse addToCart(@RequestBody Cart cartData){
         try{
@@ -49,10 +58,10 @@ public class CartController extends BaseController {
             if(cartData.getUserID()==null){
                 return makeResponse(MKOResponseCode.DataNotFound,"找不到[userId]参数");
             }
-            if(cartRepository.finduser(cartData.getUserID())==null){
+            if(userInfoRepository.chooseID(cartData.getUserID())==null){
                 return makeResponse(MKOResponseCode.DataNotFound,"无此用户");
             }
-            if(cartRepository.findgoods(cartData.getGoodsId())==null){
+            if(goodsRepository.chooseGoodsId(cartData.getGoodsId())==null){
                 return makeResponse(MKOResponseCode.DataNotFound,"无此商品");
             }
             Cart cart=new Cart();
@@ -60,6 +69,10 @@ public class CartController extends BaseController {
             cart.setGoodsId(cartData.getGoodsId());
             cart.setUserID(cartData.getUserID());
             cart.setCartDate(new Date());
+            cart.setCgmtModifeid(new Date());
+            cartRepository.saveAndFlush(cart);
+            Double sum=totalPrice(cartData.getUserID());
+            cart.setAllPrice(sum);
             cartRepository.saveAndFlush(cart);
             return makeSuccessResponse("添加成功");
         }catch (Exception e){
@@ -68,7 +81,13 @@ public class CartController extends BaseController {
         }
     }
 
-        //更新修改购物车
+
+    /**
+     * @program: goods manager system
+     * @description: 更新购物车
+     * @author: Yuxz
+     * @create: 2019-03-20
+     **/
     @PostMapping ("updateCart")
     MKOResponse updateCart(@RequestBody Cart cartData){
             if(cartData.getUserID()==null){
@@ -80,48 +99,78 @@ public class CartController extends BaseController {
             if(cartData.getCartId()==null){
                 return makeResponse(MKOResponseCode.DataNotFound,"找不到[cartId]参数");
             }
-            if(cartRepository.finduser(cartData.getUserID())==null){
+            if(userInfoRepository.chooseID(cartData.getUserID())==null){
                 return makeResponse(MKOResponseCode.DataNotFound,"无此用户");
             }
-            if(cartRepository.findgoods(cartData.getGoodsId())==null){
+            if(goodsRepository.chooseGoodsId(cartData.getGoodsId())==null){
                 return makeResponse(MKOResponseCode.DataNotFound,"无此商品");
             }
-
-            Cart cart=new Cart();
+            Cart cart=cartRepository.cartId(cartData.getCartId());
             cart.setCartId(cartData.getCartId());
             cart.setGoodsId(cartData.getGoodsId());
             cart.setQuantity(cartData.getQuantity());
             cart.setUserID(cartData.getUserID());
             cart.setCgmtModifeid(new Date());
             //计算总价格
+            cartRepository.saveAndFlush(cart);
             Double sum=totalPrice(cartData.getUserID());
             cart.setAllPrice(sum);
             cartRepository.saveAndFlush(cart);
             return makeSuccessResponse("");
     }
 
-    //删除购物车
+
+    /**
+     * @program: goods manager system
+     * @description: 删除购物车
+     * @author: Yuxz
+     * @create: 2019-03-20
+     **/
     @GetMapping("deleteCart")
-    MKOResponse delete(@RequestParam Integer cartId) {
+    MKOResponse delete(@RequestParam Integer cartId,@RequestParam Integer userID) {
         {
             Cart result = cartRepository.cartId(cartId);
             if (result == null) {
                 return this.makeResponse(MKOResponseCode.DataNotFound, "找不到此ID");
-            } else {
+            }
+            if(result.getUserID()!=userID){
+                return this.makeResponse(MKOResponseCode.NoPermission,"无权限删除");
+            }
+            else {
                 this.cartRepository.delete(result);
                 return this.makeSuccessResponse("删除成功");
             }
         }
     }
-    //清空购物车
+
+
+    /**
+     * @program: goods manager system
+     * @description:清空购物车
+     * @author: Yuxz
+     * @create: 2019-03-20
+     **/
     @GetMapping("delAll")
     MKOResponse delAll(@RequestParam Integer userID){
         //查询用户的购物车
+       if(userInfoRepository.chooseID(userID)==null){
+           return this.makeResponse(MKOResponseCode.DataNotFound,"找不到此用户");
+       }
+       List<Cart> cart=cartRepository.getCartList(userID);
+       if(cart==null){
+           return  this.makeResponse(MKOResponseCode.DataNotFound,"找不到购物车");
+       }
        cartRepository.findqk(userID);
        return this.makeSuccessResponse("删除成功");
     }
 
-        //购物车列表
+
+    /**
+     * @program: goods manager system
+     * @description: 购物车列表
+     * @author: Yuxz
+     * @create: 2019-03-20
+     **/
     @GetMapping("listCart")
     MKOResponse updateCart(@RequestParam Integer userID,
                            @RequestParam int page, @RequestParam int count) {
@@ -148,29 +197,45 @@ public class CartController extends BaseController {
         return makeResponse(MKOResponseCode.Success, resultAll, "");
     }
 
-        //购物车的购买
+
+    /**
+     * @program: goods manager system
+     * @description: 购买购物车
+     * @author: Yuxz
+     * @create: 2019-03-20
+     **/
     @GetMapping("buyCart")
     public MKOResponse bugCart(@RequestParam Integer userID){
         try{
             //判断客户存在
-            if(cartRepository.finduser(userID)==null){
+            if(userInfoRepository.chooseID(userID)==null){
                 return makeResponse(MKOResponseCode.DataNotFound,"找不到此用户");
             }
-            Cart cart=cartRepository.getCartbuy(userID);
+            List<Cart> cart=cartRepository.getCartList(userID);
+            Orderitem orderitem=new Orderitem();
             Orders orders=new Orders();
-            orders.setUserID(cart.getUserID());
-            orders.setGoodsId(cart.getGoodsId());
-            orders.setOrdersQuantity(cart.getQuantity());
-            orders.setTotalPrice(cart.getAllPrice());
+            orderitem.setOrderId(orders.getOrdersId());
+            orders.setUserID(userID);
             orders.setOrdersdate(new Date());
             orders.setOgmtModifeid(new Date());
+            for(int i=0;i<cart.size();i++){
+//                JSONObject obj = (JSONObject) JSONObject.toJSON(cart.get(1));
+                Cart result=cart.get(i);
+               orderitem.setQuantity(result.getQuantity());
+               orderitem.setGoodsId(result.getGoodsId());
+               orderitem.setQuantity(result.getQuantity());
+               orderitem.setSubTotal(result.getAllPrice());
+               orderitem.setGmtCreate(new Date());
+            }
             this.odersRepository.saveAndFlush(orders);
+            this.orderitemRepository.saveAndFlush(orderitem);
             return makeSuccessResponse("");
         }catch (Exception e){
             e.printStackTrace();
             return makeBussessErrorResponse("未知异常");
         }
     }
+
 
     /*
      * 列表数据
@@ -191,6 +256,7 @@ public class CartController extends BaseController {
         map.put("datas", list);
         return  map;
     }
+
 
     public double totalPrice(Integer id){
         List<Cart> list = cartRepository.getCartList(id);
