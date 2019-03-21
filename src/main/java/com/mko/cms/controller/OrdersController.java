@@ -73,7 +73,7 @@ public class OrdersController extends  BaseController {
             //生成订单编号
             String ordersCode=getOrderIdByTime();
             orders.setOrdersCode(ordersCode);
-            Double price = odersRepository.findprice(ordersData.getGoodsId());
+            Double price = goodsRepository.findprice(ordersData.getGoodsId());
             int quantity = ordersData.getOrdersQuantity();
             Double totalPrice = goods.getGoodsPrice() * quantity;
             orders.setTotalPrice(totalPrice);

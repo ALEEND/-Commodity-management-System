@@ -16,6 +16,9 @@ public interface CartRepository extends JpaRepository<Cart,Integer> {
 
     @Query(value="SELECT * FROM WHERE cartId=?1",nativeQuery = true)
     Cart cartId(Integer cartId);
+
+   // JPA 规范 Cart findByCartId(Integer cartID);
+
     @Transactional
     @Modifying //定义更新删除操作
     @Query(value = "DELETE FROM cart WHERE userID=?1",nativeQuery = true)
@@ -23,5 +26,5 @@ public interface CartRepository extends JpaRepository<Cart,Integer> {
 
     @Query(value = "select * from cart where userID=?1",nativeQuery = true)
     List<Cart> getCartList(Integer userID);
-
+    // JPA 规范 List<Cart> findByUserID(Integer userID);
 }
